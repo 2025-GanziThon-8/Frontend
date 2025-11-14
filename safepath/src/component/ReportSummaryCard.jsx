@@ -53,16 +53,16 @@ export default function ReportSummaryCard({
   return (
     <div
       className="
-        w-[322px] min-h-[454px]
-        rounded-[20px] border-2 border-primary-green
-        shadow px-5 pt-6 pb-4
-      "
-      style={{
-        background:
-          "linear-gradient(131deg, rgba(255, 253, 245, 0) 0%, rgba(107, 201, 106, 0.20) 100%), #FFFDF5",
-        backdropFilter: "blur(0.5px)",
-      }}
-    >
+        w-full max-w-[322px] min-h-[454px]
+      rounded-[20px] border-2 border-primary-green
+      shadow px-5 pt-6 pb-4
+    "
+    style={{
+      background:
+        "linear-gradient(131deg, rgba(255, 253, 245, 0) 0%, rgba(107, 201, 106, 0.20) 100%), #FFFDF5",
+      backdropFilter: "blur(0.5px)",
+    }}
+  >
       <div className="flex items-center justify-center relative">
         <h3 className="text-semi-16 text-neutral-black tracking-[0.04em] font-semibold">
           {title}

@@ -1,22 +1,50 @@
 // src/components/ReportDetailPanel.jsx
 
 export default function ReportDetailPanel({
+  // 프론트에서만 관리하는 텍스트 (경로 이름, 분석 기준)
   routeText = "경로 : 성수역  →  한양대역",
-  gradeText = "종합 등급 : A등급 (82점)",
-  distanceText = "거리 : 0.85 km",
   criteriaText = "분석 기준 : CPTED",
-  summaryText =
-    "일부 좁은 골목 구간(210 ~ 310m)은 집중등이 희박으로\n주의가 필요합니다.",
+
+  // 명세서 /analysis/report 응답 데이터
+  report,       // { cpted_score, total_distance, total_time, cctv_count, ... }
+  loading = false,
+  error,
   onGuideClick,
 }) {
-  // CPTED 평가 / 구간 안내 더미 데이터
-  const cptedItems = [
-    "자연감시 : 90점 - 밝고 CCTV 다수 존재",
-    "접근통제 : 70점 - 개방형 접속 다수 존재",
-    "영역성 강화 : 80점 - 상점 및 출입구 다수 조성",
-    "활동성 : 75점 - 야간 시간대 인적 도보",
-    "유지관리 : 85점 - 조명/시설 양호",
-  ];
+  // ====== 응답 데이터 기반 파생 값 ======
+  const score = report?.cpted_score;
+  const distanceMeters = report?.total_distance;
+  const timeSeconds = report?.total_time;
+  const aiComment =
+    report?.ai_comment ??
+    "일부 좁은 골목 구간(210 ~ 310m)은 집중등이 희박으로\n주의가 필요합니다.";
+
+  const displayGradeText =
+    score != null
+      ? `종합 등급 : A등급 (${score.toFixed(1)}점)`
+      : "종합 등급 : A등급 (82점)";
+
+  const displayDistanceText =
+    distanceMeters != null
+      ? `거리 : ${(distanceMeters / 1000).toFixed(2)} km`
+      : "거리 : 0.85 km";
+
+  // CPTED 평가 박스: 명세서 속 count 값들을 문장으로 변환
+  const cptedItems = report
+    ? [
+        `CCTV 개수 : ${report.cctv_count}개`,
+        `조명 개수 : ${report.light_count}개`,
+        `편의시설(상점) : ${report.store_count}개`,
+        `치안 시설(파출소) : ${report.police_count}개`,
+        `학교 : ${report.school_count}개`,
+      ]
+    : [
+        "자연감시 : 90점 - 밝고 CCTV 다수 존재",
+        "접근통제 : 70점 - 개방형 접속 다수 존재",
+        "영역성 강화 : 80점 - 상점 및 출입구 다수 조성",
+        "활동성 : 75점 - 야간 시간대 인적 도보",
+        "유지관리 : 85점 - 조명/시설 양호",
+      ];
 
   const sectionItems = [
     "0m ~ 200m : 조명 밝음, CCTV 다수 + 안전",
@@ -38,11 +66,23 @@ export default function ReportDetailPanel({
 
       {/* 본문 */}
       <div className="px-6 pt-6 pb-5">
+        {/* 로딩 / 에러 상태 안내 */}
+        {loading && (
+          <p className="mb-3 text-center text-[12px] text-neutral-gray200">
+            CPTED · AI 리포트를 생성하는 중입니다...
+          </p>
+        )}
+        {error && (
+          <p className="mb-3 text-center text-[12px] text-red-500 whitespace-pre-line">
+            {error}
+          </p>
+        )}
+
         {/* 경로 / 점수 정보 */}
         <div className="space-y-1.5 text-neutral-black text-[16px] font-medium tracking-[0.04em]">
           <p>{routeText}</p>
-          <p>{gradeText}</p>
-          <p>{distanceText}</p>
+          <p>{displayGradeText}</p>
+          <p>{displayDistanceText}</p>
           <p>{criteriaText}</p>
         </div>
 
@@ -55,7 +95,7 @@ export default function ReportDetailPanel({
             요약
           </h3>
           <p className="mt-3 text-[12px] font-medium tracking-[0.04em] text-neutral-black leading-relaxed whitespace-pre-line">
-            {summaryText}
+            {aiComment}
           </p>
 
           {/* 페이지 도트 */}
