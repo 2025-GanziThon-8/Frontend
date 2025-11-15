@@ -1,5 +1,6 @@
 // src/screens/ReportScreen.jsx
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
 import ReportSummaryCard from "../component/ReportSummaryCard";
 import ReportDetailPanel from "../component/ReportDetailPanel";
@@ -17,6 +18,8 @@ export default function ReportScreen() {
   const [reportData, setReportData] = useState(null);
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [reportError, setReportError] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     let ro;
@@ -104,6 +107,12 @@ export default function ReportScreen() {
     // setReportError(null);
   };
 
+   // 🔹 길 안내 받기 버튼 클릭 → 모달 닫고 /route 로 이동
+  const handleGuideClick = () => {
+    setIsDetailOpen(false);
+    navigate("/route");                                // ✅ 이동 경로
+  };
+
   return (
     <div className="fixed inset-0 mx-auto w-full max-w-[402px] h-screen overflow-hidden">
       {/* 지도: 배경 고정 */}
@@ -152,7 +161,7 @@ export default function ReportScreen() {
                   report={reportData}
                   loading={isReportLoading}
                   error={reportError}
-                  onGuideClick={() => {}}
+                  onGuideClick={handleGuideClick}
                 />
               </div>
             </div>
