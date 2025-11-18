@@ -10,7 +10,7 @@ export function loadKakao() {
     kakaoPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       // autoload=false 로 붙이고, 로드 후 kakao.maps.load(...) 호출
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
       script.async = true;
       script.onload = () => {
         console.log('[loadKakao] script onload'); // ✅ LOG
