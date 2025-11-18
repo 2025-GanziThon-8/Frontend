@@ -1,19 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import Mascot from "../assets/img/mascot.png";
 
-export default function InputRoute() {
-  const [waypoints, setWaypoints] = useState([]);
-
-  const handleAddWaypoint = () => {
-    setWaypoints([...waypoints, ""]);
-  };
-
-  const handleChangeWaypoint = (idx, value) => {
-    const updated = [...waypoints];
-    updated[idx] = value;
-    setWaypoints(updated);
-  };
-
+export default function InputRoute({
+  start,
+  end,
+  viaList,
+  onClickStart,
+  onClickEnd,
+  onClickVia,
+  onAddVia,
+}) {
   return (
     <div
       className="w-[356px] bg-neutral-white rounded-[20px] border-2 border-primary-green/60
@@ -24,39 +20,47 @@ export default function InputRoute() {
         <div className="flex justify-center mb-3">
           <img src={Mascot} alt="mascot" className="w-[90px] h-auto" />
         </div>
-        <h2 className="text-center text-[16px] text-neutral-black font-semibold leading-6 mb-4 tracking-wide">
+        <h2 className="text-center text-[16px] text-neutral-black font-semibold leading-6 mb-4">
           출발지와 도착지를 입력하고<br />안전한 길을 찾아보세요!
         </h2>
       </div>
+      
       <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
-        <input
-          type="text"
-          placeholder="1. 출발지를 입력해주세요"
-          className="w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green
-                     placeholder-neutral-gray300 text-neutral-black text-[14px]"
-        />
-        {waypoints.map((point, idx) => (
-          <input
+        <div
+          onClick={onClickStart}
+          className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
+        >
+          <span className={`${start ? "text-neutral-black" : "text-neutral-gray300"}`}>
+            {start || "출발지를 입력해주세요"}
+          </span>
+        </div>
+
+        {viaList.map((v, idx) => (
+          <div
             key={idx}
-            type="text"
-            placeholder={`${idx + 2}. 경유지를 입력해주세요`}
-            value={point}
-            onChange={(e) => handleChangeWaypoint(idx, e.target.value)}
-            className="w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green
-                       placeholder-neutral-gray300 text-neutral-black text-[14px]"
-          />
+            onClick={() => onClickVia(idx)}
+            className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
+          >
+            <span className="text-neutral-black">
+              {v || "경유지를 입력해주세요"}
+            </span>
+          </div>
         ))}
-        <input
-          type="text"
-          placeholder={`${waypoints.length + 2}. 도착지를 입력해주세요`}
-          className="w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green
-                     placeholder-neutral-gray300 text-neutral-black text-[14px]"
-        />
+
+        <div
+          onClick={onClickEnd}
+          className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
+        >
+          <span className={`${end ? "text-neutral-black" : "text-neutral-gray300"}`}>
+            {end || "도착지를 입력해주세요"}
+          </span>
+        </div>
       </div>
+      
       <div className="px-6 pb-6">
         <button
           type="button"
-          onClick={handleAddWaypoint}
+          onClick={onAddVia}
           className="flex items-center justify-center gap-2 mx-auto mb-4 
                      text-neutral-gray300 text-[14px] font-medium"
         >
@@ -65,6 +69,7 @@ export default function InputRoute() {
           </span>
           경유지 추가하기
         </button>
+
         <button className="w-full py-3 bg-primary-green text-neutral-white rounded-lg text-[16px] font-semibold">
           안전한 길찾기
         </button>
