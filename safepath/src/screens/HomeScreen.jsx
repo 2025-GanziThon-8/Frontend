@@ -10,11 +10,19 @@ export default function HomeScreen() {
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
 
-  const { start, end, viaList, addVia } = useRouteStore();
+  const { start, end, viaList, addVia } = useRouteStore(); // zustand 상태 관리
 
-  const handleClickStart = () => navigate(`/search?type=from`);
-  const handleClickEnd = () => navigate(`/search?type=to`);
+  const handleClickStart = () => navigate("/search?type=from");
+  const handleClickEnd = () => navigate("/search?type=to");
   const handleClickVia = (idx) => navigate(`/search?type=via&index=${idx}`);
+
+  const goRoute = () => {
+    if (!start || !end) {
+      alert("출발지와 도착지를 먼저 입력해주세요.");
+      return;
+    }
+    navigate("/route");
+  };
 
   useEffect(() => {
     let ro;
@@ -39,11 +47,14 @@ export default function HomeScreen() {
   return (
     <div className="fixed inset-0 mx-auto w-full max-w-[402px] h-screen overflow-hidden">
 
+      {/* 배경 지도 */}
       <div ref={mapRef} className="absolute inset-0 -z-10" />
       <div className="absolute inset-0 backdrop-blur-[2px] -z-5" />
 
+      {/* 상단 바 */}
       <div className="absolute inset-x-0 top-0 h-[90px] bg-primary-green z-10" />
 
+      {/* 입력창 */}
       <div className="absolute inset-x-0 top-[50%] -translate-y-1/2 z-20 flex justify-center px-4">
         <InputRoute
           start={start}
@@ -53,6 +64,7 @@ export default function HomeScreen() {
           onClickEnd={handleClickEnd}
           onClickVia={handleClickVia}
           onAddVia={addVia}
+          onRoute={goRoute}
         />
       </div>
     </div>

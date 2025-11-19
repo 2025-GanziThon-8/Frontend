@@ -9,6 +9,7 @@ export default function InputRoute({
   onClickEnd,
   onClickVia,
   onAddVia,
+  onRoute,
 }) {
   return (
     <div
@@ -24,17 +25,20 @@ export default function InputRoute({
           출발지와 도착지를 입력하고<br />안전한 길을 찾아보세요!
         </h2>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
+        
+        {/* 출발지 */}
         <div
           onClick={onClickStart}
           className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
         >
           <span className={`${start ? "text-neutral-black" : "text-neutral-gray300"}`}>
-            {start || "출발지를 입력해주세요"}
+            {start?.name || "출발지를 입력해주세요"}
           </span>
         </div>
 
+        {/* 경유지 */}
         {viaList.map((v, idx) => (
           <div
             key={idx}
@@ -42,22 +46,25 @@ export default function InputRoute({
             className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
           >
             <span className={`${v ? "text-neutral-black" : "text-neutral-gray300"}`}>
-              {v || "경유지를 입력해주세요"}
+              {v?.name || "경유지를 입력해주세요"}
             </span>
           </div>
         ))}
 
+        {/* 도착지 */}
         <div
           onClick={onClickEnd}
           className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
         >
           <span className={`${end ? "text-neutral-black" : "text-neutral-gray300"}`}>
-            {end || "도착지를 입력해주세요"}
+            {end?.name || "도착지를 입력해주세요"}
           </span>
         </div>
       </div>
-      
+
       <div className="px-6 pb-6">
+
+        {/* 경유지 추가 */}
         <button
           type="button"
           onClick={onAddVia}
@@ -70,7 +77,11 @@ export default function InputRoute({
           경유지 추가하기
         </button>
 
-        <button className="w-full py-3 bg-primary-green text-neutral-white rounded-lg text-[16px] font-semibold">
+        {/* 길찾기 */}
+        <button
+          onClick={onRoute}
+          className="w-full py-3 bg-primary-green text-neutral-white rounded-lg text-[16px] font-semibold"
+        >
           안전한 길찾기
         </button>
       </div>
