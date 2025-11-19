@@ -41,7 +41,7 @@ export default function InputRoute({
             onClick={() => onClickVia(idx)}
             className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
           >
-            <span className="text-neutral-black">
+            <span className={`${v ? "text-neutral-black" : "text-neutral-gray300"}`}>
               {v || "경유지를 입력해주세요"}
             </span>
           </div>
