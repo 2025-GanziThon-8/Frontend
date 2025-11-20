@@ -1,3 +1,4 @@
+// src/store/useRouteStore.js
 import { create } from "zustand";
 
 export const useRouteStore = create((set) => ({

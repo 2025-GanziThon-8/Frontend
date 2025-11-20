@@ -1,3 +1,4 @@
+// src/screens/OnboardScreen.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Onboard1 from "../assets/img/OnboardIMG1.svg";
@@ -29,7 +30,7 @@ export default function OnboardScreen() {
         <button onClick={skip} className="absolute top-10 right-6 text-[#7DBF6F] text-[16px] font-medium">
           건너뛰기
         </button>
-        <div className="mt-20 w-[75%] max-w-[350px] rounded-3xl border-[3px] border-[#7DBF6F] overflow-hidden bg-white shadow-sm">
+        <div className="mt-20 w-[60%] max-w-[350px] rounded-2xl overflow-hidden bg-white shadow-sm">
           <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${page * 100}%)` }}>
             {slides.map((src, idx) => (
               <img key={idx} src={src} className="w-full flex-shrink-0" />
@@ -41,12 +42,12 @@ export default function OnboardScreen() {
         </p>
         <div className="flex gap-2 mt-6">
           {[0, 1, 2].map((i) => (
-            <div key={i} className={`w-3 h-3 rounded-full ${ page === i ? "bg-[#7DBF6F]" : "bg-[#A5D6A7]" }`}></div>
+            <div key={i} className={`w-2 h-2 rounded-full ${ page === i ? "bg-[#7DBF6F]" : "bg-[#A5D6A7]" }`}></div>
           ))}
         </div>
         <button
           onClick={handleNext}
-          className="absolute bottom-10 w-[85%] py-4 bg-[#7DBF6F] text-white text-lg font-semibold rounded-2xl shadow-sm"
+          className="absolute bottom-10 w-[90%] py-4 bg-[#7DBF6F] text-white text-lg font-semibold rounded-2xl shadow-sm"
         >
           {page === 2 ? "시작하세요" : "계속"}
         </button>

@@ -2,15 +2,14 @@
 import { useEffect, useRef } from "react";
 import { loadKakao } from "../lib/loadKakao";
 import mascot from "../assets/img/mascot.png";
-import iconClose2 from "../assets/icon/icon_close2.svg"; // ✅ 클로즈 아이콘
 
 export default function ReportSummaryCard({
-  title = "AI INSIGHT",
-  points = [
-    "밝기와 안전, 효율성이 균형 잡힌 길이에요",
-    "너무 돌아가지 않으면서도 안정적이에요",
-    "AI가 종합 분석해 가장 추천한 경로예요",
-  ],
+  // 어떤 타입의 카드인지 (기본: 종합 추천 경로)
+  variant = "balanced", // "balanced" | "bright" | "fast"
+
+  title,   // 기본값 없으면 아래 presetTitle 사용
+  points,  // 기본값 없으면 variant별 presetPoints 사용
+
   previewCenter = { lat: 37.5446, lng: 127.0565 },
   previewPath = [],
   onDetail,
@@ -18,6 +17,31 @@ export default function ReportSummaryCard({
 }) {
   const miniMapRef = useRef(null);
 
+  // --- 1) variant별 프리셋 텍스트 정의 ---
+  const presetTitle = "AI INSIGHT";
+
+  const presetPointsByVariant = {
+    balanced: [
+      "밝기와 안전, 효율성이 균형 잡힌 길이에요",
+      "너무 돌아가지 않으면서도 안정적이에요",
+      "AI가 종합 분석해 가장 추천한 경로예요",
+    ],
+    bright: [
+      "가로등과 상점이 많은 밝은 길이에요",
+      "CCTV 밀집 구간 위주로 안내돼요",
+      "어두운 골목은 피해서 안내됩니다",
+    ],
+    fast: [
+      "이동 거리가 짧고 신호 교차가 적어요",
+      "가장 빠르게 도착할 수 있는 길이에요",
+      "다만 야간엔 조명이 어두울 수 있어요",
+    ],
+  };
+
+  const finalTitle = title ?? presetTitle;
+  const finalPoints = points ?? presetPointsByVariant[variant] ?? [];
+
+  // --- 2) 카카오 미니맵 ---
   useEffect(() => {
     let map, polyline;
 
@@ -54,33 +78,28 @@ export default function ReportSummaryCard({
     <div
       className="
         w-full max-w-[322px] min-h-[454px]
-      rounded-[20px] border-2 border-primary-green
-      shadow px-5 pt-6 pb-4
-    "
-    style={{
-      background:
-        "linear-gradient(131deg, rgba(255, 253, 245, 0) 0%, rgba(107, 201, 106, 0.20) 100%), #FFFDF5",
-      backdropFilter: "blur(0.5px)",
-    }}
-  >
+        rounded-[20px] border-2 border-primary-green
+        shadow px-5 pt-6 pb-4
+      "
+      style={{
+        background:
+          "linear-gradient(131deg, rgba(255, 253, 245, 0) 0%, rgba(107, 201, 106, 0.20) 100%), #FFFDF5",
+        backdropFilter: "blur(0.5px)",
+      }}
+    >
       <div className="flex items-center justify-center relative">
         <h3 className="text-semi-16 text-neutral-black tracking-[0.04em] font-semibold">
-          {title}
+          {finalTitle}
         </h3>
         <button
           aria-label="닫기"
           onClick={onClose}
           className="absolute right-0 w-7 h-7 rounded-full hover:bg-primary-green/10 flex items-center justify-center"
         >
-          <img
-            src={iconClose2}
-            alt="닫기"
-            className="w-4 h-4"
-          />
         </button>
       </div>
 
-      {/* ✅ 마스코트 */}
+      {/* 마스코트 */}
       <div className="flex justify-center mt-4">
         <img
           src={mascot}
@@ -89,13 +108,15 @@ export default function ReportSummaryCard({
         />
       </div>
 
-      <ul className="mt-3 space-y-1.5 text-regular-12 text-neutral-black">
-        {points.map((t, i) => (
-          <li key={i} className="leading-[14px]">
-            {i + 1}. {t}
-          </li>
-        ))}
-      </ul>
+      <div className="mt-3 flex justify-center">
+        <ul className="space-y-1.5 text-[14px] text-neutral-black text-left">
+            {finalPoints.map((t, i) => (
+            <li key={i} className="leading-[20px]">
+                {i + 1}. {t}
+            </li>
+            ))}
+        </ul>
+        </div>
 
       <div
         ref={miniMapRef}

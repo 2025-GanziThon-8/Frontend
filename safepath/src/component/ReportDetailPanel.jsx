@@ -1,56 +1,105 @@
 // src/components/ReportDetailPanel.jsx
 
 export default function ReportDetailPanel({
-  // 프론트에서만 관리하는 텍스트 (경로 이름, 분석 기준)
-  routeText = "경로 : 성수역  →  한양대역",
+  // 프론트에서만 관리하는 기본 텍스트 (fallback 용)
+  routeText = "경로 : 출발지  →  도착지",
   criteriaText = "분석 기준 : CPTED",
 
-  // 명세서 /analysis/report 응답 데이터
-  report,       // { cpted_score, total_distance, total_time, cctv_count, ... }
+  // /analysis/report 응답 데이터
+  report, // { route_summary, cpted_evaluation, segment_guides, ai_summary, ... }
   loading = false,
   error,
   onGuideClick,
 }) {
-  // ====== 응답 데이터 기반 파생 값 ======
-  const score = report?.cpted_score;
-  const distanceMeters = report?.total_distance;
-  const timeSeconds = report?.total_time;
-  const aiComment =
-    report?.ai_comment ??
-    "일부 좁은 골목 구간(210 ~ 310m)은 집중등이 희박으로\n주의가 필요합니다.";
+  // ====== 응답 데이터 구조 분해 ======
+  const summary = report?.route_summary || null;
+  const evals = report?.cpted_evaluation || {};
+  const facilities = evals.facilities || {};
+  const natural = evals.natural_surveillance || {};
+  const access = evals.access_control || {};
+  const activity = evals.activity_support || {};
+  const maintain = evals.maintenance || {};
+  const territory = evals.territoriality || {};
+  const guides = report?.segment_guides || [];
 
-  const displayGradeText =
-    score != null
-      ? `종합 등급 : A등급 (${score.toFixed(1)}점)`
-      : "종합 등급 : A등급 (82점)";
+  // ====== 파생 값 ======
+
+  // 경로 텍스트 (응답에 origin/destination 있으면 그것으로 대체)
+  const displayRouteText = summary
+    ? `경로 : ${summary.origin}  →  ${summary.destination}`
+    : routeText;
+
+  // 종합 등급 텍스트 (overall_grade 사용)
+  const displayGradeText = summary?.overall_grade
+    ? `종합 등급 : ${summary.overall_grade}`
+    : "종합 등급 : 등급 (점)";
+
+  // 거리 텍스트 (m → km)
+  const distanceMeters =
+    typeof summary?.total_distance === "number"
+      ? summary.total_distance
+      : null;
 
   const displayDistanceText =
     distanceMeters != null
       ? `거리 : ${(distanceMeters / 1000).toFixed(2)} km`
-      : "거리 : 0.85 km";
+      : "거리 : 0 km";
 
-  // CPTED 평가 박스: 명세서 속 count 값들을 문장으로 변환
-  const cptedItems = report
-    ? [
-        `CCTV 개수 : ${report.cctv_count}개`,
-        `조명 개수 : ${report.light_count}개`,
-        `편의시설(상점) : ${report.store_count}개`,
-        `치안 시설(파출소) : ${report.police_count}개`,
-        `학교 : ${report.school_count}개`,
-      ]
-    : [
-        "자연감시 : 90점 - 밝고 CCTV 다수 존재",
-        "접근통제 : 70점 - 개방형 접속 다수 존재",
-        "영역성 강화 : 80점 - 상점 및 출입구 다수 조성",
-        "활동성 : 75점 - 야간 시간대 인적 도보",
-        "유지관리 : 85점 - 조명/시설 양호",
-      ];
+  // AI 요약 문장 (줄바꿈 포함)
+  const aiSummaryText =
+    report?.ai_summary ??
+    "요약 내용";
 
-  const sectionItems = [
-    "0m ~ 200m : 조명 밝음, CCTV 다수 + 안전",
-    "210m ~ 310m : 간헐적 어두운 구간 존재, 주의 필요",
-    "320m ~ 850m : 상업시설 밀집, 인적 많음 + 안전",
-  ];
+  // CPTED 평가 리스트
+  const cptedItems =
+    report && Object.keys(evals).length > 0
+      ? [
+          `자연감시 (${natural.score ?? "-"}점) - ${
+            natural.description ?? "자연감시 평가 결과"
+          }`,
+          `접근통제 (${access.score ?? "-"}점) - ${
+            access.description ?? "접근통제 평가 결과"
+          }`,
+          `활동성 (${activity.score ?? "-"}점) - ${
+            activity.description ?? "활동성 평가 결과"
+          }`,
+          `유지관리 (${maintain.score ?? "-"}점) - ${
+            maintain.description ?? "유지관리 평가 결과"
+          }`,
+          `영역성 (${territory.score ?? "-"}점) - ${
+            territory.description ?? "영역성 평가 결과"
+          }`,
+          `시설 현황: CCTV ${facilities.cctv_count ?? 0}대 · 조명 ${
+            facilities.light_count ?? 0
+          }개 · 편의점 ${facilities.store_count ?? 0}개 · 경찰시설 ${
+            facilities.police_count ?? 0
+          }곳 · 학교 ${facilities.school_count ?? 0}곳`,
+        ]
+      : [
+          "자연감시 : 0점 - ",
+          "접근통제 : 0점 - ",
+          "영역성 : 0점 - ",
+          "활동성 : 0점 - ",
+          "유지관리 : 0점 - ",
+        ];
+
+  // 구간별 안내 리스트
+  const sectionItems =
+    guides.length > 0
+      ? guides.map((g) => {
+          const desc = g.description || "";
+          const dist = g.distance_range || "";
+          const level = g.safety_level || "";
+          const rec =
+            g.recommendations && g.recommendations.length > 0
+              ? ` (${g.recommendations.join(", ")})`
+              : "";
+          // 예: "0m ~ 200m : CCTV 다수, 편의점 있음 (안전한 구간입니다)"
+          return `${dist} : ${desc} ${level ? `[${level}]` : ""}${rec}`;
+        })
+      : [
+         
+        ];
 
   return (
     <div className="w-full max-w-[356px] rounded-[20px] bg-neutral-white border border-neutral-gray100 shadow-md overflow-hidden">
@@ -80,9 +129,11 @@ export default function ReportDetailPanel({
 
         {/* 경로 / 점수 정보 */}
         <div className="space-y-1.5 text-neutral-black text-[16px] font-medium tracking-[0.04em]">
-          <p>{routeText}</p>
+          <p>{displayRouteText}</p>
           <p>{displayGradeText}</p>
           <p>{displayDistanceText}</p>
+          {/* 필요하면 시간도 추가 */}
+          {/* {displayTimeText && <p>{displayTimeText}</p>} */}
           <p>{criteriaText}</p>
         </div>
 
@@ -95,14 +146,8 @@ export default function ReportDetailPanel({
             요약
           </h3>
           <p className="mt-3 text-[12px] font-medium tracking-[0.04em] text-neutral-black leading-relaxed whitespace-pre-line">
-            {aiComment}
+            {aiSummaryText}
           </p>
-
-          {/* 페이지 도트 */}
-          <div className="mt-4 flex justify-center gap-2">
-            <span className="w-[6px] h-[6px] rounded-full bg-[#7D817D]" />
-            <span className="w-[6px] h-[6px] rounded-full bg-[#CFCED2]" />
-          </div>
         </div>
 
         {/* CPTED 평가 */}

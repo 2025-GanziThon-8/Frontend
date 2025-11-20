@@ -1,3 +1,4 @@
+// src/screens/HomeScreen.jsx
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
@@ -21,7 +22,7 @@ export default function HomeScreen() {
       alert("출발지와 도착지를 먼저 입력해주세요.");
       return;
     }
-    navigate("/route");
+    navigate("/report");
   };
 
   useEffect(() => {
@@ -51,11 +52,8 @@ export default function HomeScreen() {
       <div ref={mapRef} className="absolute inset-0 -z-10" />
       <div className="absolute inset-0 backdrop-blur-[2px] -z-5" />
 
-      {/* 상단 바 */}
-      <div className="absolute inset-x-0 top-0 h-[90px] bg-primary-green z-10" />
-
       {/* 입력창 */}
-      <div className="absolute inset-x-0 top-[50%] -translate-y-1/2 z-20 flex justify-center px-4">
+      <div className="absolute inset-x-0 top-[48%] -translate-y-1/2 z-20 flex justify-center px-4">
         <InputRoute
           start={start}
           end={end}

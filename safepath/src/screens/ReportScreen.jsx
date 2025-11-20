@@ -4,23 +4,85 @@ import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
 import ReportSummaryCard from "../component/ReportSummaryCard";
 import ReportDetailPanel from "../component/ReportDetailPanel";
+import { useRouteStore } from "../store/useRouteStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ""; // 배포 전에는 ""로 두고 상대 경로 사용
+// .env 없을 때도 배포 주소를 기본값으로 사용
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://safe-route-api-9396636795.asia-northeast3.run.app";
+
+// Kakao 장소 객체/문자열에서 보기 좋은 이름 뽑기
+const getPlaceLabel = (place) => {
+  if (!place) return "";
+  if (typeof place === "string") return place;
+
+  return (
+    place.place_name ||
+    place.road_address_name ||
+    place.address_name ||
+    place.name ||
+    ""
+  );
+};
+
+// 경로 객체에서 좌표 배열 뽑기 (백엔드 구조가 어떻게 와도 최대한 대응)
+const getCoordsFromPath = (path) => {
+  if (!path) return null;
+  return (
+    path.coordinates ||
+    path.polyline ||
+    path.coords ||
+    path.points ||
+    null
+  );
+};
+
+// 경로 객체에서 거리/시간 뽑기
+const getDistanceFromPath = (path) => {
+  if (!path) return null;
+  return (
+    path.totalDistance ??
+    path.total_distance ??
+    path.distance ??
+    null
+  );
+};
+
+const getTimeFromPath = (path) => {
+  if (!path) return null;
+  return (
+    path.totalTime ??
+    path.total_time ??
+    path.time ??
+    path.duration ??
+    null
+  );
+};
+
+// 인덱스 → 카드 타입(variant) 매핑
+const getVariantByIndex = (idx) => {
+  if (idx === 1) return "bright"; // 2번째 카드: 밝은 길
+  if (idx === 2) return "fast";   // 3번째 카드: 빠른 길
+  return "balanced";              // 1번째 카드: 종합 추천
+};
 
 export default function ReportScreen() {
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
+  const navigate = useNavigate();
 
-  // 🔹 상세 패널 오픈 여부
+  // 출발지/도착지 + 전체 경로 리스트
+  const { start, end, paths } = useRouteStore();
+
+  // 상세 패널 상태
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // 🔹 /analysis/report 응답 상태
+  // /analysis/report 응답 상태
   const [reportData, setReportData] = useState(null);
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [reportError, setReportError] = useState(null);
 
-  const navigate = useNavigate();
-
+  // 배경 카카오맵
   useEffect(() => {
     let ro;
     loadKakao().then((kakao) => {
@@ -33,7 +95,11 @@ export default function ReportScreen() {
       map.setDraggable(false);
       map.setZoomable(false);
 
-      ro = new ResizeObserver(() => mapObjRef.current?.relayout());
+      ro = new ResizeObserver(() => {
+        if (mapObjRef.current && mapRef.current) {
+          mapObjRef.current.relayout();
+        }
+      });
       ro.observe(mapRef.current);
     });
 
@@ -43,33 +109,63 @@ export default function ReportScreen() {
     };
   }, []);
 
-  const previewPath = [
+  // paths가 아직 없을 때 사용할 임시 프리뷰 경로
+  const fallbackPreviewPath = [
     { lat: 37.5439, lng: 127.0553 },
     { lat: 37.5446, lng: 127.0565 },
     { lat: 37.5453, lng: 127.0582 },
   ];
 
-  // 🔹 요약 카드 → 상세 열기 + /analysis/report 요청
-  const handleOpenDetail = async () => {
+  // 실제 카드에 쓸 경로 리스트 (최대 3개만 사용)
+  const cardPaths =
+    paths && paths.length > 0 ? paths.slice(0, 3) : [null, null, null];
+
+  // 요약 카드 → 상세 열기 + /analysis/report 요청
+  const handleOpenDetail = async (path, index) => {
     setIsDetailOpen(true);
     setIsReportLoading(true);
     setReportError(null);
     setReportData(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/analysis/report`, {
+      // 1) 출발지/도착지 이름
+      const originLabel = getPlaceLabel(start) || "출발지";
+      const destLabel = getPlaceLabel(end) || "도착지";
+
+      // 2) 거리/시간 (각 path마다 다르게)
+      const totalDistance =
+        getDistanceFromPath(path) ?? 1941; // m (fallback)
+      const totalTime =
+        getTimeFromPath(path) ?? 1560; // sec (fallback)
+
+      // 3) 좌표(polyline) (각 path마다 다르게)
+      const coordsFromPath = getCoordsFromPath(path);
+      const coordinates =
+        coordsFromPath && coordsFromPath.length
+          ? coordsFromPath
+          : fallbackPreviewPath;
+
+      // 4) routeId (path 안에 있으면 그거, 없으면 path-1/2/3)
+      const routeId =
+        path?.routeId || path?.id || `path-${index + 1}`;
+
+      const payload = {
+        routeId,
+        origin: originLabel,
+        destination: destLabel,
+        totalDistance,
+        totalTime,
+        coordinates,
+      };
+
+      console.log("report payload >>>", payload);
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/analysis/report`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          route_id: "path-1",
-          stats: {
-            distance: 1300, // 예시: 1300m
-            time: 900, // 예시: 900초 (15분)
-            cpted_avg: 82.3,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       const isJson =
@@ -79,7 +175,6 @@ export default function ReportScreen() {
       const data = isJson ? await response.json() : null;
 
       if (!response.ok) {
-        // 명세서: 400 / 422 / 500 / 502 등 공통 처리
         const message =
           data?.detail ||
           data?.message ||
@@ -89,9 +184,10 @@ export default function ReportScreen() {
         return;
       }
 
-      // 성공 (200 OK) → data.report 사용
+      // 성공 (200 OK): data.report 사용
       setReportData(data?.report ?? null);
     } catch (e) {
+      console.error(e);
       setReportError("네트워크 오류로 리포트 생성에 실패했습니다.");
       setReportData(null);
     } finally {
@@ -99,23 +195,20 @@ export default function ReportScreen() {
     }
   };
 
-  // 🔹 상세 닫기
+  // 상세 닫기
   const handleCloseDetail = () => {
     setIsDetailOpen(false);
-    // 필요하면 에러/데이터도 여기서 초기화
-    // setReportData(null);
-    // setReportError(null);
   };
 
-   // 🔹 길 안내 받기 버튼 클릭 → 모달 닫고 /route 로 이동
+  // 길 안내 받기 → /route 이동
   const handleGuideClick = () => {
     setIsDetailOpen(false);
-    navigate("/route");                                // ✅ 이동 경로
+    navigate("/route");
   };
 
   return (
     <div className="fixed inset-0 mx-auto w-full max-w-[402px] h-screen overflow-hidden">
-      {/* 지도: 배경 고정 */}
+      {/* 지도: 배경 */}
       <div
         ref={mapRef}
         className="absolute inset-0 -z-10 pointer-events-none"
@@ -124,22 +217,31 @@ export default function ReportScreen() {
       {/* 블러 오버레이 */}
       <div className="absolute inset-0 z-10 bg-neutral-white/40 backdrop-blur-[6px] pointer-events-none" />
 
-      {/* 가로 슬라이더 */}
+      {/* 가로 슬라이더 (요약 카드들) */}
       <div className="absolute left-1/2 top-[47%] z-20 w-full -translate-x-1/2 -translate-y-1/2 ">
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pl-10 pr-10">
-          {[0, 1, 2].map((i) => (
-             <div key={i} className="shrink-0 w-full max-w-[322px] snap-center">
-              <ReportSummaryCard
-                previewCenter={{
-                  lat: 37.5446 + i * 0.0003,
-                  lng: 127.0565 + i * 0.0003,
-                }}
-                previewPath={previewPath}
-                onDetail={handleOpenDetail}
-                onClose={() => {}}
-              />
-            </div>
-          ))}
+          {cardPaths.map((path, i) => {
+            const previewPath = getCoordsFromPath(path) || fallbackPreviewPath;
+            const variant = getVariantByIndex(i);
+
+            return (
+              <div
+                key={path?.routeId || path?.id || `card-${i}`}
+                className="shrink-0 w-full max-w-[322px] snap-center"
+              >
+                <ReportSummaryCard
+                  variant={variant}
+                  previewCenter={{
+                    lat: 37.5446 + i * 0.0003,
+                    lng: 127.0565 + i * 0.0003,
+                  }}
+                  previewPath={previewPath}
+                  onDetail={() => handleOpenDetail(path, i)}
+                  onClose={() => {}}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -147,15 +249,13 @@ export default function ReportScreen() {
       {isDetailOpen && (
         <div
           className="absolute inset-0 z-30 flex items-center justify-center bg-black/20"
-          onClick={handleCloseDetail} // 바깥 클릭 시 닫기
+          onClick={handleCloseDetail}
         >
           <div
             className="w-full px-4"
-            onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 닫힘 방지
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* 카드 자체 높이를 고정: 화면의 72% + 살짝 위로 올림 */}
             <div className="mx-auto max-w-[356px] h-[72vh] rounded-[20px] overflow-hidden -translate-y-6">
-              {/* 이 안에서만 세로 스크롤 */}
               <div className="h-full overflow-y-auto no-scrollbar">
                 <ReportDetailPanel
                   report={reportData}

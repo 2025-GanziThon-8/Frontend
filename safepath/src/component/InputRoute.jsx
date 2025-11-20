@@ -1,5 +1,7 @@
+// src/components/InputRoute.jsx
 import React from "react";
 import Mascot from "../assets/img/mascot.png";
+import AddRoute from "./AddRoute";
 
 export default function InputRoute({
   start,
@@ -27,13 +29,16 @@ export default function InputRoute({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 space-y-4 pb-4">
-        
         {/* 출발지 */}
         <div
           onClick={onClickStart}
           className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
         >
-          <span className={`${start ? "text-neutral-black" : "text-neutral-gray300"}`}>
+          <span
+            className={`${
+              start ? "text-neutral-black" : "text-neutral-gray300"
+            }`}
+          >
             {start?.name || "출발지를 입력해주세요"}
           </span>
         </div>
@@ -45,7 +50,11 @@ export default function InputRoute({
             onClick={() => onClickVia(idx)}
             className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
           >
-            <span className={`${v ? "text-neutral-black" : "text-neutral-gray300"}`}>
+            <span
+              className={`${
+                v ? "text-neutral-black" : "text-neutral-gray300"
+              }`}
+            >
               {v?.name || "경유지를 입력해주세요"}
             </span>
           </div>
@@ -56,26 +65,21 @@ export default function InputRoute({
           onClick={onClickEnd}
           className="cursor-pointer w-full px-4 py-2.5 bg-neutral-white rounded-lg border border-primary-green"
         >
-          <span className={`${end ? "text-neutral-black" : "text-neutral-gray300"}`}>
+          <span
+            className={`${
+              end ? "text-neutral-black" : "text-neutral-gray300"
+            }`}
+          >
             {end?.name || "도착지를 입력해주세요"}
           </span>
         </div>
       </div>
 
       <div className="px-6 pb-6">
-
-        {/* 경유지 추가 */}
-        <button
-          type="button"
-          onClick={onAddVia}
-          className="flex items-center justify-center gap-2 mx-auto mb-4 
-                     text-neutral-gray300 text-[14px] font-medium"
-        >
-          <span className="w-4 h-4 rounded-full bg-primary-green flex items-center justify-center text-white">
-            +
-          </span>
-          경유지 추가하기
-        </button>
+        {/* 🔹 경유지 추가 버튼을 AddRoute 컴포넌트로 교체 */}
+        <div className="flex justify-center mb-4">
+          <AddRoute onClick={onAddVia} />
+        </div>
 
         {/* 길찾기 */}
         <button
