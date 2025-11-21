@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
 import RouteSearchHeader from "../component/RouteSearchHeader";
 import RouteCard from "../component/RouteCard";
@@ -55,6 +56,7 @@ function decodePolyline(encoded, precision = 5) {
 }
 
 export default function RouteScreen() {
+  const navigate = useNavigate();
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
   const polylineRef = useRef(null);      
@@ -211,7 +213,7 @@ export default function RouteScreen() {
 
     if (!selected || !selected.polyline) return;
 
-    // 1) 응답 polyline → 좌표 배열로 변환
+    // 응답 polyline → 좌표 배열로 변환
     let coords = [];
     if (Array.isArray(selected.polyline)) {
 
@@ -324,7 +326,7 @@ export default function RouteScreen() {
           fromText={start?.name ?? start?.place_name ?? "출발지"}
           toText={end?.name ?? end?.place_name ?? "도착지"}
           onBack={() => window.history.back()}
-          onClose={() => window.history.back()}
+          onClose={() => navigate("/home")}
           onSwap={() => {}}
         />
       </div>
