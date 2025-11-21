@@ -9,7 +9,7 @@ export default function ReportDetailPanel({
   error,
   onGuideClick,
 }) {
-  // ====== 응답 데이터 구조 분해 ======
+  // 응답 데이터 구조 분해
   const summary = report?.route_summary || null;
   const evals = report?.cpted_evaluation || {};
   const facilities = evals.facilities || {};
@@ -20,33 +20,21 @@ export default function ReportDetailPanel({
   const territory = evals.territoriality || {};
   const guides = report?.segment_guides || [];
 
-  // ====== 파생 값 ======
-
   // 경로 텍스트 
-  const displayRouteText = summary
-    ? `경로 : ${summary.origin}  →  ${summary.destination}`
-    : routeText;
+  const displayRouteText = summary ? `경로 : ${summary.origin}  →  ${summary.destination}` : routeText;
 
   // 종합 등급 텍스트 
-  const displayGradeText = summary?.overall_grade
-    ? `종합 등급 : ${summary.overall_grade}`
-    : "종합 등급 : 등급 (점)";
+  const displayGradeText = summary?.overall_grade ? `종합 등급 : ${summary.overall_grade}` : "종합 등급 : 등급 (점)";
 
   // 거리 텍스트 
   const distanceMeters =
-    typeof summary?.total_distance === "number"
-      ? summary.total_distance
-      : null;
+    typeof summary?.total_distance === "number" ? summary.total_distance : null;
 
   const displayDistanceText =
-    distanceMeters != null
-      ? `거리 : ${(distanceMeters / 1000).toFixed(2)} km`
-      : "거리 : 0 km";
+    distanceMeters != null ? `거리 : ${(distanceMeters / 1000).toFixed(2)} km` : "거리 : 0 km";
 
   // AI 요약 문장 
-  const aiSummaryText =
-    report?.ai_summary ??
-    "요약 내용";
+  const aiSummaryText = report?.ai_summary ?? "요약 내용";
 
   // CPTED 평가 리스트
   const cptedItems =
