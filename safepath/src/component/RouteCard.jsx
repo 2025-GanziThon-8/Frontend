@@ -1,4 +1,3 @@
-// src/components/RouteCard.jsx
 import iconLocation from "../assets/icon/icon_location.svg";
 
 export default function RouteCard({

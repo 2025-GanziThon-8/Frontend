@@ -1,4 +1,3 @@
-// src/components/InputRoute.jsx
 import React from "react";
 import Mascot from "../assets/img/mascot.png";
 import AddRoute from "./AddRoute";

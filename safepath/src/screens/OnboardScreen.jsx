@@ -1,4 +1,3 @@
-// src/screens/OnboardScreen.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Onboard1 from "../assets/img/OnboardIMG1.svg";

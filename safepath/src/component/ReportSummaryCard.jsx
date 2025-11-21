@@ -1,14 +1,15 @@
-// src/components/ReportSummaryCard.jsx
 import { useEffect, useRef } from "react";
 import { loadKakao } from "../lib/loadKakao";
 import mascot from "../assets/img/mascot.png";
 
 export default function ReportSummaryCard({
   variant = "balanced",
-  title,   
-  points,  
+  title,
+  points,
 
+  // 카드별 중심 좌표 (ReportScreen 에서 넘겨줌)
   previewCenter = { lat: 37.5446, lng: 127.0565 },
+  // 경로 좌표 배열 
   previewPath = [],
   onDetail,
   onClose,
@@ -38,19 +39,22 @@ export default function ReportSummaryCard({
   const finalTitle = title ?? presetTitle;
   const finalPoints = points ?? presetPointsByVariant[variant] ?? [];
 
-  // 카카오 미니맵 
   useEffect(() => {
     let map, polyline;
 
     loadKakao().then((kakao) => {
       if (!miniMapRef.current) return;
 
-      const center = new kakao.maps.LatLng(previewCenter.lat, previewCenter.lng);
+      const center = new kakao.maps.LatLng(
+        previewCenter.lat,
+        previewCenter.lng
+      );
+
       map = new kakao.maps.Map(miniMapRef.current, { center, level: 5 });
       map.setDraggable(false);
       map.setZoomable(false);
 
-      if (previewPath && previewPath.length >= 2) {
+      if (Array.isArray(previewPath) && previewPath.length >= 2) {
         const linePath = previewPath.map(
           (p) => new kakao.maps.LatLng(p.lat, p.lng)
         );
@@ -92,8 +96,7 @@ export default function ReportSummaryCard({
           aria-label="닫기"
           onClick={onClose}
           className="absolute right-0 w-7 h-7 rounded-full hover:bg-primary-green/10 flex items-center justify-center"
-        >
-        </button>
+        />
       </div>
 
       {/* 마스코트 */}
@@ -105,16 +108,18 @@ export default function ReportSummaryCard({
         />
       </div>
 
+      {/* 설명 리스트 */}
       <div className="mt-3 flex justify-center">
         <ul className="space-y-1.5 text-[14px] text-neutral-black text-left">
-            {finalPoints.map((t, i) => (
+          {finalPoints.map((t, i) => (
             <li key={i} className="leading-[20px]">
-                {i + 1}. {t}
+              {i + 1}. {t}
             </li>
-            ))}
+          ))}
         </ul>
-        </div>
+      </div>
 
+      {/* 미니맵 */}
       <div
         ref={miniMapRef}
         className="mt-4 w-full h-[145px] rounded-md border border-primary-green overflow-hidden"

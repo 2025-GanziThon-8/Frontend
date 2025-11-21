@@ -1,4 +1,3 @@
-// src/components/RouteSearchHeader.jsx
 import iconBack2 from "../assets/icon/icon_back2.svg";
 import iconClose3 from "../assets/icon/icon_close3.svg";
 

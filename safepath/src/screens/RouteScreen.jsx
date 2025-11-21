@@ -1,4 +1,3 @@
-// src/screens/RouteScreen.jsx
 import { useEffect, useRef, useState } from "react";
 import { loadKakao } from "../lib/loadKakao";
 import RouteSearchHeader from "../component/RouteSearchHeader";

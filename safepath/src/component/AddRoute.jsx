@@ -1,4 +1,3 @@
-// src/component/AddRoute.jsx
 import addIcon from '../assets/icon/icon_add.svg';
 
 export default function AddRoute({

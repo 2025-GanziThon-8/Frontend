@@ -1,4 +1,3 @@
-// src/component/BtnLong.jsx
 export default function BtnLong({
   children = '계속',
   onClick,

@@ -1,5 +1,3 @@
-// src/components/ReportDetailPanel.jsx
-
 export default function ReportDetailPanel({
   // 프론트에서만 관리하는 기본 텍스트 (fallback 용)
   routeText = "경로 : 출발지  →  도착지",

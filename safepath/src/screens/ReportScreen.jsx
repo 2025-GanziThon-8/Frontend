@@ -1,4 +1,3 @@
-// src/screens/ReportScreen.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
@@ -10,7 +9,6 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://safe-route-api-9396636795.asia-northeast3.run.app";
 
-// Kakao 장소 객체/문자열에서 보기 좋은 이름 뽑기
 const getPlaceLabel = (place) => {
   if (!place) return "";
   if (typeof place === "string") return place;
@@ -24,15 +22,10 @@ const getPlaceLabel = (place) => {
   );
 };
 
-// 경로 객체에서 좌표 배열 뽑기 (백엔드 구조가 어떻게 와도 최대한 대응)
 const getCoordsFromPath = (path) => {
   if (!path) return null;
   return (
-    path.coordinates ||
-    path.polyline ||
-    path.coords ||
-    path.points ||
-    null
+    path.coordinates || path.coords || path.points || null
   );
 };
 
@@ -59,9 +52,9 @@ const getTimeFromPath = (path) => {
 };
 
 const getVariantByIndex = (idx) => {
-  if (idx === 1) return "bright"; 
-  if (idx === 2) return "fast";   
-  return "balanced";             
+  if (idx === 1) return "bright";
+  if (idx === 2) return "fast";
+  return "balanced";
 };
 
 export default function ReportScreen() {
@@ -86,7 +79,7 @@ export default function ReportScreen() {
     loadKakao().then((kakao) => {
       if (!mapRef.current) return;
 
-      const center = new kakao.maps.LatLng(37.5446, 127.0565); // 성수역
+      const center = new kakao.maps.LatLng(37.5446, 127.0565); // fallback
       const map = new kakao.maps.Map(mapRef.current, { center, level: 4 });
       mapObjRef.current = map;
 
@@ -126,25 +119,19 @@ export default function ReportScreen() {
     setReportData(null);
 
     try {
-      //출발지/도착지 이름
       const originLabel = getPlaceLabel(start) || "출발지";
       const destLabel = getPlaceLabel(end) || "도착지";
 
-      //거리/시간 (각 path마다 다르게)
-      const totalDistance =
-        getDistanceFromPath(path) ?? 1941; // m (fallback)
-      const totalTime =
-        getTimeFromPath(path) ?? 1560; // sec (fallback)
+      const totalDistance = getDistanceFromPath(path) ?? 1941; // m
+      const totalTime = getTimeFromPath(path) ?? 1560; // sec
 
-      //좌표(polyline) (각 path마다 다르게)
       const coordsFromPath = getCoordsFromPath(path);
       const coordinates =
         coordsFromPath && coordsFromPath.length
           ? coordsFromPath
           : fallbackPreviewPath;
 
-      const routeId =
-        path?.routeId || path?.id || `path-${index + 1}`;
+      const routeId = path?.routeId || path?.id || `path-${index + 1}`;
 
       const payload = {
         routeId,
@@ -218,7 +205,30 @@ export default function ReportScreen() {
       <div className="absolute left-1/2 top-[47%] z-20 w-full -translate-x-1/2 -translate-y-1/2 ">
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pl-10 pr-10">
           {cardPaths.map((path, i) => {
-            const previewPath = getCoordsFromPath(path) || fallbackPreviewPath;
+            // 경로 좌표
+            const rawCoords = getCoordsFromPath(path);
+            const previewPath =
+              Array.isArray(rawCoords) && rawCoords.length > 0
+                ? rawCoords.map((c) => ({
+                    lat: c.lat ?? c.y ?? c.latitude,
+                    lng: c.lng ?? c.x ?? c.longitude,
+                  }))
+                : fallbackPreviewPath;
+
+            // 미니맵 중심
+            let previewCenter = {
+              lat: 37.5446 + i * 0.0003,
+              lng: 127.0565 + i * 0.0003,
+            };
+
+            if (start && typeof start === "object") {
+              const latVal = Number(start.y ?? start.lat);
+              const lngVal = Number(start.x ?? start.lng);
+              if (!Number.isNaN(latVal) && !Number.isNaN(lngVal)) {
+                previewCenter = { lat: latVal, lng: lngVal };
+              }
+            }
+
             const variant = getVariantByIndex(i);
 
             return (
@@ -228,10 +238,7 @@ export default function ReportScreen() {
               >
                 <ReportSummaryCard
                   variant={variant}
-                  previewCenter={{
-                    lat: 37.5446 + i * 0.0003,
-                    lng: 127.0565 + i * 0.0003,
-                  }}
+                  previewCenter={previewCenter}
                   previewPath={previewPath}
                   onDetail={() => handleOpenDetail(path, i)}
                   onClose={() => {}}

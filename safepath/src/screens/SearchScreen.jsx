@@ -1,4 +1,3 @@
-// src/screens/SearchScreen.jsx
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { loadKakao } from "../lib/loadKakao";

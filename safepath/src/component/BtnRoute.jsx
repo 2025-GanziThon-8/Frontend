@@ -1,4 +1,3 @@
-//src/component/BtnRoute.jsx
 import iconTarget from '../assets/icon/icon_target.svg';
 
 export default function BtnRoute({

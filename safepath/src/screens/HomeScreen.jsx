@@ -1,4 +1,3 @@
-// src/screens/HomeScreen.jsx
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadKakao } from "../lib/loadKakao";
