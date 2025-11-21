@@ -24,7 +24,9 @@ const getPlaceLabel = (place) => {
 
 const getCoordsFromPath = (path) => {
   if (!path) return null;
-  return path.coordinates || path.coords || path.points || null;
+  return (
+    path.coordinates || path.coords || path.points || null
+  );
 };
 
 const getDistanceFromPath = (path) => {
@@ -98,11 +100,10 @@ export default function ReportScreen() {
     { lat: 37.5453, lng: 127.0582 },
   ];
 
-  const cardPaths = Array.isArray(paths) ? paths.slice(0, 3) : [];
+  const cardPaths =
+    paths && paths.length > 0 ? paths.slice(0, 3) : [null, null, null];
 
   const handleOpenDetail = async (path, index) => {
-    if (!path) return;
-
     setIsDetailOpen(true);
     setIsReportLoading(true);
     setReportError(null);
@@ -214,8 +215,6 @@ export default function ReportScreen() {
       <div className="absolute left-1/2 top-[47%] z-20 w-full -translate-x-1/2 -translate-y-1/2 ">
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pl-10 pr-10">
           {cardPaths.map((path, i) => {
-            if (!path) return null;
-
             const rawCoords = getCoordsFromPath(path);
             const previewPath =
               Array.isArray(rawCoords) && rawCoords.length > 0
