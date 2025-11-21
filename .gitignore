@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+safepath/node_modules/
 
 # production
 /build
