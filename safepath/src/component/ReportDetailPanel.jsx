@@ -6,7 +6,7 @@ export default function ReportDetailPanel({
   criteriaText = "분석 기준 : CPTED",
 
   // /analysis/report 응답 데이터
-  report, // { route_summary, cpted_evaluation, segment_guides, ai_summary, ... }
+  report, 
   loading = false,
   error,
   onGuideClick,
@@ -24,17 +24,17 @@ export default function ReportDetailPanel({
 
   // ====== 파생 값 ======
 
-  // 경로 텍스트 (응답에 origin/destination 있으면 그것으로 대체)
+  // 경로 텍스트 
   const displayRouteText = summary
     ? `경로 : ${summary.origin}  →  ${summary.destination}`
     : routeText;
 
-  // 종합 등급 텍스트 (overall_grade 사용)
+  // 종합 등급 텍스트 
   const displayGradeText = summary?.overall_grade
     ? `종합 등급 : ${summary.overall_grade}`
     : "종합 등급 : 등급 (점)";
 
-  // 거리 텍스트 (m → km)
+  // 거리 텍스트 
   const distanceMeters =
     typeof summary?.total_distance === "number"
       ? summary.total_distance
@@ -45,7 +45,7 @@ export default function ReportDetailPanel({
       ? `거리 : ${(distanceMeters / 1000).toFixed(2)} km`
       : "거리 : 0 km";
 
-  // AI 요약 문장 (줄바꿈 포함)
+  // AI 요약 문장 
   const aiSummaryText =
     report?.ai_summary ??
     "요약 내용";
@@ -94,12 +94,10 @@ export default function ReportDetailPanel({
             g.recommendations && g.recommendations.length > 0
               ? ` (${g.recommendations.join(", ")})`
               : "";
-          // 예: "0m ~ 200m : CCTV 다수, 편의점 있음 (안전한 구간입니다)"
+
           return `${dist} : ${desc} ${level ? `[${level}]` : ""}${rec}`;
         })
-      : [
-         
-        ];
+      : [];
 
   return (
     <div className="w-full max-w-[356px] rounded-[20px] bg-neutral-white border border-neutral-gray100 shadow-md overflow-hidden">
@@ -132,8 +130,6 @@ export default function ReportDetailPanel({
           <p>{displayRouteText}</p>
           <p>{displayGradeText}</p>
           <p>{displayDistanceText}</p>
-          {/* 필요하면 시간도 추가 */}
-          {/* {displayTimeText && <p>{displayTimeText}</p>} */}
           <p>{criteriaText}</p>
         </div>
 

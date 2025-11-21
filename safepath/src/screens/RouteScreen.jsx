@@ -9,12 +9,10 @@ import { useRouteStore } from "../store/useRouteStore";
 import departIcon from "../assets/icon/icon_depart.svg";
 import arrivedIcon from "../assets/icon/icon_arrived.svg";
 
-// .env에 VITE_API_BASE_URL 없으면 기본값으로 배포 주소 + /api/v1 사용
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://safe-route-api-9396636795.asia-northeast3.run.app/api/v1";
 
-// Encoded polyline(v5) 문자열 → [{lat, lng}, ...] 로 디코딩
 function decodePolyline(encoded, precision = 5) {
   if (!encoded || typeof encoded !== "string") return [];
 
@@ -30,7 +28,6 @@ function decodePolyline(encoded, precision = 5) {
     let shift = 0;
     let b;
 
-    // latitude
     do {
       b = encoded.charCodeAt(index++) - 63;
       result |= (b & 0x1f) << shift;
@@ -39,7 +36,6 @@ function decodePolyline(encoded, precision = 5) {
     const dlat = (result & 1) ? ~(result >> 1) : result >> 1;
     lat += dlat;
 
-    // longitude
     result = 0;
     shift = 0;
     do {
@@ -62,11 +58,11 @@ function decodePolyline(encoded, precision = 5) {
 export default function RouteScreen() {
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
-  const polylineRef = useRef(null);      // 현재 지도에 그려진 경로 선
-  const startMarkerRef = useRef(null);   // 출발지 마커
-  const endMarkerRef = useRef(null);     // 도착지 마커
+  const polylineRef = useRef(null);      
+  const startMarkerRef = useRef(null);  
+  const endMarkerRef = useRef(null);   
 
-  // 🔹 전역 상태 (Home/Search에서 저장한 값)
+  // 전역 상태 (Home/Search에서 저장한 값)
   const {
     start,
     end,
@@ -75,15 +71,13 @@ export default function RouteScreen() {
     setSelectedPath,
   } = useRouteStore();
 
-  // 🔹 경로 목록 / 상태
+  // 경로 목록 / 상태
   const [paths, setPaths] = useState([]);
   const [pathsLoading, setPathsLoading] = useState(false);
   const [pathsError, setPathsError] = useState(null);
   const [selectedPathId, setSelectedPathId] = useState(null);
 
-  // ==============================
-  // 1) 카카오맵 로딩
-  // ==============================
+  // 카카오맵 로딩
   useEffect(() => {
     let ro;
     loadKakao().then((kakao) => {
@@ -121,9 +115,6 @@ export default function RouteScreen() {
     };
   }, []);
 
-  // ==============================
-  // 2) /analysis/paths 호출
-  // ==============================
   useEffect(() => {
     const fetchPaths = async () => {
       setPathsLoading(true);
@@ -143,7 +134,7 @@ export default function RouteScreen() {
       const endLat = end.lat ?? end.y;
       const endLng = end.lng ?? end.x;
 
-      // 경유지는 1개만 지원(명세서 기준) — 없으면 null
+      // 경유지는 1개만 지원, 없으면 null
       const via = viaList[0] || null;
       const waypointLat = via ? via.lat ?? via.y : null;
       const waypointLng = via ? via.lng ?? via.x : null;
@@ -163,7 +154,7 @@ export default function RouteScreen() {
       console.log("paths payload >>>", payload);
 
       try {
-        // ⚠️ BASE_URL에 이미 /api/v1 포함되어 있으니 여기서는 /analysis/paths만 붙임
+        // BASE_URL에 이미 /api/v1 포함되어 있으니 여기서는 /analysis/paths만 붙임
         const res = await fetch(`${API_BASE_URL}/analysis/paths`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -181,21 +172,20 @@ export default function RouteScreen() {
             `경로 조회에 실패했습니다. (HTTP ${res.status})`;
           setPathsError(msg);
           setPaths([]);
-          setGlobalPaths([]); // 전역도 비우기
+          setGlobalPaths([]);
           return;
         }
 
         const list = data?.paths ?? [];
         setPaths(list);
-        setGlobalPaths(list); // 🔹 ReportScreen에서 쓰려고 전역에도 저장
+        setGlobalPaths(list);
 
-        // 추천 경로 또는 첫 번째 경로를 선택 상태로
         const recommended =
           list.find((p) => p.is_recommended) ?? list[0] ?? null;
 
         if (recommended) {
           setSelectedPathId(recommended.id);
-          setSelectedPath(recommended); // 🔹 전역 selectedPath 저장 (리포트용)
+          setSelectedPath(recommended); 
         }
       } catch (e) {
         console.error(e);
@@ -210,9 +200,7 @@ export default function RouteScreen() {
     fetchPaths();
   }, [start, end, viaList, setGlobalPaths, setSelectedPath]);
 
-  // ==============================
-  // 3) 선택된 경로를 지도에 폴리라인 + 출발/도착 핀으로 표시
-  // ==============================
+  //선택된 경로를 지도에 폴리라인 + 출발/도착 핀으로 표시
   useEffect(() => {
     const kakao = window.kakao;
     if (!kakao || !kakao.maps) return;
@@ -227,19 +215,18 @@ export default function RouteScreen() {
     // 1) 응답 polyline → 좌표 배열로 변환
     let coords = [];
     if (Array.isArray(selected.polyline)) {
-      // 이미 [{lat, lng}, ...] 형태로 온 경우
+
       coords = selected.polyline.map(
         (p) => new kakao.maps.LatLng(p.lat, p.lng)
       );
     } else if (typeof selected.polyline === "string") {
-      // Encoded polyline(v5) 문자열인 경우
+        
       const decoded = decodePolyline(selected.polyline);
       coords = decoded.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
     }
 
     if (coords.length < 2) return;
 
-    // 2) 기존 선/마커 있으면 삭제
     if (polylineRef.current) {
       polylineRef.current.setMap(null);
       polylineRef.current = null;
@@ -253,7 +240,6 @@ export default function RouteScreen() {
       endMarkerRef.current = null;
     }
 
-    // 3) 새 선 그리기
     const polyline = new kakao.maps.Polyline({
       path: coords,
       strokeWeight: 6,
@@ -264,7 +250,7 @@ export default function RouteScreen() {
     polyline.setMap(mapObjRef.current);
     polylineRef.current = polyline;
 
-    // 4) 출발/도착 마커 찍기
+    // 출발/도착 마커 찍기
     const startPos = coords[0];
     const endPos = coords[coords.length - 1];
 
@@ -294,19 +280,16 @@ export default function RouteScreen() {
     startMarkerRef.current = startMarker;
     endMarkerRef.current = endMarker;
 
-    // 5) 지도를 선에 맞게 줌/이동
+    //지도를 선에 맞게 줌/이동
     const bounds = new kakao.maps.LatLngBounds();
     coords.forEach((p) => bounds.extend(p));
     mapObjRef.current.setBounds(bounds);
   }, [paths, selectedPathId]);
 
-  // ==============================
-  // 4) 카드 데이터 변환
-  // ==============================
   const cardData = paths.map((p, index) => {
     const minutes = Math.round((p.time ?? 0) / 60);
     const distance = p.distance ?? 0;
-    const safetyGrade = p.summary_grade ?? ""; // 등급/점수 문자열
+    const safetyGrade = p.summary_grade ?? "";
 
     let label = "일반/빠른경로";
     if (p.is_recommended) label = "추천경로";
@@ -317,8 +300,8 @@ export default function RouteScreen() {
       label,
       timeText: `${minutes}분`,
       distanceText: `${distance}m`,
-      safetyScore: safetyGrade, // RouteCard 안에서 어떻게 쓸지에 맞게 전달
-      aiPreview: p.ai_preview ?? [], // 필요하면 요약 카드/리포트에 사용
+      safetyScore: safetyGrade, 
+      aiPreview: p.ai_preview ?? [],
     };
   });
 
@@ -328,13 +311,12 @@ export default function RouteScreen() {
     const found = paths.find((p) => p.id === pathId);
     if (found) {
       setSelectedPath(found);
-      // polyline + 핀은 위 useEffect에서 selectedPathId 변경을 감지해서 다시 그림
     }
   };
 
   return (
     <div className="fixed inset-0 mx-auto w-full max-w-[402px] h-screen overflow-hidden">
-      {/* 지도: 배경 전체 */}
+      {/* 지도 배경 전체 */}
       <div ref={mapRef} className="absolute inset-0 -z-10" />
 
       {/* 상단 헤더 */}

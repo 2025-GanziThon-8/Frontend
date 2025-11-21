@@ -4,11 +4,9 @@ import { loadKakao } from "../lib/loadKakao";
 import mascot from "../assets/img/mascot.png";
 
 export default function ReportSummaryCard({
-  // 어떤 타입의 카드인지 (기본: 종합 추천 경로)
-  variant = "balanced", // "balanced" | "bright" | "fast"
-
-  title,   // 기본값 없으면 아래 presetTitle 사용
-  points,  // 기본값 없으면 variant별 presetPoints 사용
+  variant = "balanced",
+  title,   
+  points,  
 
   previewCenter = { lat: 37.5446, lng: 127.0565 },
   previewPath = [],
@@ -17,7 +15,6 @@ export default function ReportSummaryCard({
 }) {
   const miniMapRef = useRef(null);
 
-  // --- 1) variant별 프리셋 텍스트 정의 ---
   const presetTitle = "AI INSIGHT";
 
   const presetPointsByVariant = {
@@ -41,7 +38,7 @@ export default function ReportSummaryCard({
   const finalTitle = title ?? presetTitle;
   const finalPoints = points ?? presetPointsByVariant[variant] ?? [];
 
-  // --- 2) 카카오 미니맵 ---
+  // 카카오 미니맵 
   useEffect(() => {
     let map, polyline;
 

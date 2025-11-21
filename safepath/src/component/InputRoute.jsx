@@ -76,7 +76,6 @@ export default function InputRoute({
       </div>
 
       <div className="px-6 pb-6">
-        {/* 🔹 경유지 추가 버튼을 AddRoute 컴포넌트로 교체 */}
         <div className="flex justify-center mb-4">
           <AddRoute onClick={onAddVia} />
         </div>

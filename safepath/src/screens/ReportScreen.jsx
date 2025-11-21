@@ -6,7 +6,6 @@ import ReportSummaryCard from "../component/ReportSummaryCard";
 import ReportDetailPanel from "../component/ReportDetailPanel";
 import { useRouteStore } from "../store/useRouteStore";
 
-// .env 없을 때도 배포 주소를 기본값으로 사용
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://safe-route-api-9396636795.asia-northeast3.run.app";
@@ -59,11 +58,10 @@ const getTimeFromPath = (path) => {
   );
 };
 
-// 인덱스 → 카드 타입(variant) 매핑
 const getVariantByIndex = (idx) => {
-  if (idx === 1) return "bright"; // 2번째 카드: 밝은 길
-  if (idx === 2) return "fast";   // 3번째 카드: 빠른 길
-  return "balanced";              // 1번째 카드: 종합 추천
+  if (idx === 1) return "bright"; 
+  if (idx === 2) return "fast";   
+  return "balanced";             
 };
 
 export default function ReportScreen() {
@@ -128,24 +126,23 @@ export default function ReportScreen() {
     setReportData(null);
 
     try {
-      // 1) 출발지/도착지 이름
+      //출발지/도착지 이름
       const originLabel = getPlaceLabel(start) || "출발지";
       const destLabel = getPlaceLabel(end) || "도착지";
 
-      // 2) 거리/시간 (각 path마다 다르게)
+      //거리/시간 (각 path마다 다르게)
       const totalDistance =
         getDistanceFromPath(path) ?? 1941; // m (fallback)
       const totalTime =
         getTimeFromPath(path) ?? 1560; // sec (fallback)
 
-      // 3) 좌표(polyline) (각 path마다 다르게)
+      //좌표(polyline) (각 path마다 다르게)
       const coordsFromPath = getCoordsFromPath(path);
       const coordinates =
         coordsFromPath && coordsFromPath.length
           ? coordsFromPath
           : fallbackPreviewPath;
 
-      // 4) routeId (path 안에 있으면 그거, 없으면 path-1/2/3)
       const routeId =
         path?.routeId || path?.id || `path-${index + 1}`;
 
@@ -245,7 +242,7 @@ export default function ReportScreen() {
         </div>
       </div>
 
-      {/* 상세 리포트 패널 (모달) */}
+      {/* 상세 리포트 패널 */}
       {isDetailOpen && (
         <div
           className="absolute inset-0 z-30 flex items-center justify-center bg-black/20"

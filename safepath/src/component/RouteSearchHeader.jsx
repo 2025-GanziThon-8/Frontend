@@ -12,7 +12,7 @@ export default function RouteSearchHeader({
   return (
     <header className="w-full max-w-[402px] h-[132px] pt-5 bg-primary-green text-neutral-white font-pretendard">
       
-      {/* 2. 뒤로가기 / 타이틀 / 닫기 */}
+      {/* 뒤로가기 / 타이틀 / 닫기 */}
       <div className="flex items-center justify-between px-2">
         {/* 뒤로가기 버튼 */}
         <button
@@ -40,7 +40,7 @@ export default function RouteSearchHeader({
         </button>
       </div>
 
-      {/* 3. 경로 한 줄 바 (출발 → 도착) */}
+      {/* 경로 한 줄 바 (출발 → 도착) */}
       <div className="mt-4 px-4 pt-2">
         <div className="h-[40px] w-full rounded-[6px] bg-[#7BD57A] flex items-center justify-center">
           <span className="text-[15px] font-medium tracking-[0.03em] text-neutral-white">

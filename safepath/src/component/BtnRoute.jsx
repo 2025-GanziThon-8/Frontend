@@ -23,7 +23,7 @@ export default function BtnRoute({
     >
       <img
         src={iconTarget}
-        alt=""                 /* 장식 아이콘 → 스크린리더 숨김 */
+        alt=""                
         aria-hidden="true"
         className="w-5 h-5 select-none"
         draggable="false"
