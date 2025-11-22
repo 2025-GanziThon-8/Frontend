@@ -6,6 +6,7 @@ import RouteCard from "../component/RouteCard";
 import { useRouteStore } from "../store/useRouteStore";
 import departIcon from "../assets/icon/icon_depart.svg";
 import arrivedIcon from "../assets/icon/icon_arrived.svg";
+import Loading from "../component/Loading"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -57,6 +58,7 @@ export default function RouteScreen() {
 
   const [paths, setPaths] = useState([]);
   const [selectedPathId, setSelectedPathId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Kakao map init
   useEffect(() => {
@@ -93,24 +95,44 @@ export default function RouteScreen() {
         end_name: end.name ?? end.place_name ?? end.address_name ?? "도착지",
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/analysis/paths`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      try {
+        setIsLoading(true);
 
-      const data = await res.json();
-      const list = data.paths ?? [];
+        const res = await fetch(`${API_BASE_URL}/api/v1/analysis/paths`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      setPaths(list);
-      setGlobalPaths(list);
+        const data = await res.json();
 
-      const recommended =
-        list.find((p) => p.is_recommended) ?? list[0] ?? null;
+        if (!res.ok) {
+          console.error("[PATHS] API 실패:", data?.message);
+          alert(data?.message || "경로 조회 실패");
+          setPaths([]);
+          setGlobalPaths([]);
+          return;
+        }
 
-      if (recommended) {
-        setSelectedPathId(recommended.id);
-        setSelectedPath(recommended);
+        const list = data.paths ?? [];
+
+        setPaths(list);
+        setGlobalPaths(list);
+
+        const recommended =
+          list.find((p) => p.is_recommended) ?? list[0] ?? null;
+
+        if (recommended) {
+          setSelectedPathId(recommended.id);
+          setSelectedPath(recommended);
+        }
+      } catch (error) {
+        console.error("[PATHS] 네트워크 오류", error);
+        alert("네트워크 오류가 발생했습니다.");
+        setPaths([]);
+        setGlobalPaths([]);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -230,6 +252,13 @@ export default function RouteScreen() {
           ))}
         </div>
       </div>
+
+      {/* 로딩 오버레이 */}
+      {isLoading && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/20">
+          <Loading size={72} thickness={8} />
+        </div>
+      )}
     </div>
   );
 }

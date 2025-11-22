@@ -4,6 +4,7 @@ import { loadKakao } from "../lib/loadKakao";
 import ReportSummaryCard from "../component/ReportSummaryCard";
 import ReportDetailPanel from "../component/ReportDetailPanel";
 import { useRouteStore } from "../store/useRouteStore";
+import Loading from "../component/Loading";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -90,16 +91,16 @@ export default function ReportScreen() {
           ? path.polyline
           : fallbackPreviewPath;
 
-          const payload = {
-            routeId: path.id,
-            origin: originLabel,
-            destination: destLabel,
-            totalDistance: path.distance ?? 0,
-            totalTime: path.time ?? 0,
-            coordinates,
-            score: path.score ?? 0,      // ★ 반드시 추가
-            grade: path.grade ?? "N/A",  // ★ 반드시 추가
-          };
+      const payload = {
+        routeId: path.id,
+        origin: originLabel,
+        destination: destLabel,
+        totalDistance: path.distance ?? 0,
+        totalTime: path.time ?? 0,
+        coordinates,
+        score: path.score ?? 0,
+        grade: path.grade ?? "N/A",
+      };
 
       const response = await fetch(`${API_BASE_URL}/api/v1/analysis/report`, {
         method: "POST",
@@ -162,13 +163,21 @@ export default function ReportScreen() {
         >
           <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-[356px] h-[72vh] rounded-[20px] overflow-hidden -translate-y-6">
-              <div className="h-full overflow-y-auto no-scrollbar">
+              <div className="h-full overflow-y-auto no-scrollbar relative">
+
                 <ReportDetailPanel
                   report={reportData}
-                  loading={isReportLoading}
+                  loading={false}       
                   error={reportError}
                   onGuideClick={() => navigate("/route")}
                 />
+
+                {/* 로딩 중일 때만 위에 반투명 + 블러 오버레이 + 스피너 */}
+                {isReportLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                    <Loading size={56} thickness={8} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
