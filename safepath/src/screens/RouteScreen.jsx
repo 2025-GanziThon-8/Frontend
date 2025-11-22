@@ -4,14 +4,10 @@ import { loadKakao } from "../lib/loadKakao";
 import RouteSearchHeader from "../component/RouteSearchHeader";
 import RouteCard from "../component/RouteCard";
 import { useRouteStore } from "../store/useRouteStore";
-
-// 출발/도착 핀 아이콘
 import departIcon from "../assets/icon/icon_depart.svg";
 import arrivedIcon from "../assets/icon/icon_arrived.svg";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://safe-route-api-9396636795.asia-northeast3.run.app/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function decodePolyline(encoded, precision = 5) {
   if (!encoded || typeof encoded !== "string") return [];
@@ -155,8 +151,7 @@ export default function RouteScreen() {
       console.log("paths payload >>>", payload);
 
       try {
-        // BASE_URL에 이미 /api/v1 포함되어 있으니 여기서는 /analysis/paths만 붙임
-        const res = await fetch(`${API_BASE_URL}/analysis/paths`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/analysis/paths`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
