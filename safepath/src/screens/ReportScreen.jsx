@@ -4,6 +4,7 @@ import { loadKakao } from "../lib/loadKakao";
 import ReportSummaryCard from "../component/ReportSummaryCard";
 import ReportDetailPanel from "../component/ReportDetailPanel";
 import { useRouteStore } from "../store/useRouteStore";
+import Loading from "../component/Loading";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -20,74 +21,36 @@ const getPlaceLabel = (place) => {
   );
 };
 
-const getCoordsFromPath = (path) => {
-  if (!path) return null;
-  return (
-    path.coordinates || path.coords || path.points || null
-  );
-};
-
-// 경로 객체에서 거리/시간 뽑기
-const getDistanceFromPath = (path) => {
-  if (!path) return null;
-  return (
-    path.totalDistance ??
-    path.total_distance ??
-    path.distance ??
-    null
-  );
-};
-
-const getTimeFromPath = (path) => {
-  if (!path) return null;
-  return (
-    path.totalTime ??
-    path.total_time ??
-    path.time ??
-    path.duration ??
-    null
-  );
-};
-
-const getVariantByIndex = (idx) => {
-  if (idx === 1) return "bright";
-  if (idx === 2) return "fast";
-  return "balanced";
-};
-
 export default function ReportScreen() {
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
   const navigate = useNavigate();
 
-  // 출발지/도착지 + 전체 경로 리스트
   const { start, end, paths } = useRouteStore();
 
-  // 상세 패널 상태
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  // /analysis/report 응답 상태
-  const [reportData, setReportData] = useState(null);
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [reportError, setReportError] = useState(null);
+  const [reportData, setReportData] = useState(null);
 
-  // 배경 카카오맵
+  // 지도 초기화
   useEffect(() => {
     let ro;
+
     loadKakao().then((kakao) => {
       if (!mapRef.current) return;
 
-      const center = new kakao.maps.LatLng(37.5446, 127.0565); // fallback
-      const map = new kakao.maps.Map(mapRef.current, { center, level: 4 });
-      mapObjRef.current = map;
+      const map = new kakao.maps.Map(mapRef.current, {
+        center: new kakao.maps.LatLng(37.5446, 127.0565),
+        level: 4,
+      });
 
+      mapObjRef.current = map;
       map.setDraggable(false);
       map.setZoomable(false);
 
       ro = new ResizeObserver(() => {
-        if (mapObjRef.current && mapRef.current) {
-          mapObjRef.current.relayout();
-        }
+        mapObjRef.current?.relayout();
       });
       ro.observe(mapRef.current);
     });
@@ -98,148 +61,93 @@ export default function ReportScreen() {
     };
   }, []);
 
-  // paths가 아직 없을 때 사용할 임시 프리뷰 경로
+  // fallback polyline
   const fallbackPreviewPath = [
     { lat: 37.5439, lng: 127.0553 },
     { lat: 37.5446, lng: 127.0565 },
     { lat: 37.5453, lng: 127.0582 },
   ];
 
-  // 실제 카드에 쓸 경로 리스트 (최대 3개만 사용)
-  const cardPaths =
-    paths && paths.length > 0 ? paths.slice(0, 3) : [null, null, null];
+  const cardPaths = Array.isArray(paths) ? paths.slice(0, 3) : [];
 
-  // 요약 카드 → 상세 열기 + /analysis/report 요청
+  // 상세 보기 클릭
   const handleOpenDetail = async (path, index) => {
+    if (!path) {
+      alert("유효한 경로가 없습니다.");
+      return;
+    }
+
     setIsDetailOpen(true);
     setIsReportLoading(true);
     setReportError(null);
     setReportData(null);
 
     try {
-      const originLabel = getPlaceLabel(start) || "출발지";
-      const destLabel = getPlaceLabel(end) || "도착지";
+      const originLabel = getPlaceLabel(start);
+      const destLabel = getPlaceLabel(end);
 
-      const totalDistance = getDistanceFromPath(path) ?? 1941; // m
-      const totalTime = getTimeFromPath(path) ?? 1560; // sec
-
-      const coordsFromPath = getCoordsFromPath(path);
       const coordinates =
-        coordsFromPath && coordsFromPath.length
-          ? coordsFromPath
+        Array.isArray(path.polyline) && path.polyline.length > 0
+          ? path.polyline
           : fallbackPreviewPath;
 
-      const routeId = path?.routeId || path?.id || `path-${index + 1}`;
-
       const payload = {
-        routeId,
+        routeId: path.id,
         origin: originLabel,
         destination: destLabel,
-        totalDistance,
-        totalTime,
+        totalDistance: path.distance ?? 0,
+        totalTime: path.time ?? 0,
         coordinates,
+        score: path.score ?? 0,
+        grade: path.grade ?? "N/A",
       };
-
-      console.log("report payload >>>", payload);
 
       const response = await fetch(`${API_BASE_URL}/api/v1/analysis/report`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const isJson =
-        response.headers
-          .get("content-type")
-          ?.includes("application/json") ?? false;
-      const data = isJson ? await response.json() : null;
+      const json = await response.json();
 
       if (!response.ok) {
-        const message =
-          data?.detail ||
-          data?.message ||
-          `리포트 생성에 실패했습니다. (HTTP ${response.status})`;
-        setReportError(message);
-        setReportData(null);
+        console.error("[REPORT] API 실패:", json?.message);
+        setReportError(json?.message || "리포트 생성 실패");
         return;
       }
 
-      // 성공 (200 OK): data.report 사용
-      setReportData(data?.report ?? null);
-    } catch (e) {
-      console.error(e);
-      setReportError("네트워크 오류로 리포트 생성에 실패했습니다.");
-      setReportData(null);
+      setReportData(json.report);
+    } catch (error) {
+      console.error("[REPORT] 네트워크 오류", error);
+      setReportError("네트워크 오류로 리포트 생성 실패");
     } finally {
       setIsReportLoading(false);
     }
   };
 
-  // 상세 닫기
-  const handleCloseDetail = () => {
-    setIsDetailOpen(false);
-  };
-
-  // 길 안내 받기 → /route 이동
-  const handleGuideClick = () => {
-    setIsDetailOpen(false);
-    navigate("/route");
-  };
-
   return (
     <div className="fixed inset-0 mx-auto w-full max-w-[402px] h-screen overflow-hidden">
-      {/* 지도: 배경 */}
-      <div
-        ref={mapRef}
-        className="absolute inset-0 -z-10 pointer-events-none"
-      />
-
-      {/* 블러 오버레이 */}
+      <div ref={mapRef} className="absolute inset-0 -z-10 pointer-events-none" />
       <div className="absolute inset-0 z-10 bg-neutral-white/40 backdrop-blur-[6px] pointer-events-none" />
 
-      {/* 가로 슬라이더 (요약 카드들) */}
-      <div className="absolute left-1/2 top-[47%] z-20 w-full -translate-x-1/2 -translate-y-1/2 ">
+      {/* 카드 슬라이더 */}
+      <div className="absolute left-1/2 top-[47%] z-20 w-full -translate-x-1/2 -translate-y-1/2">
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pl-10 pr-10">
           {cardPaths.map((path, i) => {
-            // 경로 좌표
-            const rawCoords = getCoordsFromPath(path);
+            if (!path) return null;
+
             const previewPath =
-              Array.isArray(rawCoords) && rawCoords.length > 0
-                ? rawCoords.map((c) => ({
-                    lat: c.lat ?? c.y ?? c.latitude,
-                    lng: c.lng ?? c.x ?? c.longitude,
-                  }))
+              Array.isArray(path.polyline) && path.polyline.length > 0
+                ? path.polyline
                 : fallbackPreviewPath;
 
-            // 미니맵 중심
-            let previewCenter = {
-              lat: 37.5446 + i * 0.0003,
-              lng: 127.0565 + i * 0.0003,
-            };
-
-            if (start && typeof start === "object") {
-              const latVal = Number(start.y ?? start.lat);
-              const lngVal = Number(start.x ?? start.lng);
-              if (!Number.isNaN(latVal) && !Number.isNaN(lngVal)) {
-                previewCenter = { lat: latVal, lng: lngVal };
-              }
-            }
-
-            const variant = getVariantByIndex(i);
-
             return (
-              <div
-                key={path?.routeId || path?.id || `card-${i}`}
-                className="shrink-0 w-full max-w-[322px] snap-center"
-              >
+              <div key={path.id} className="shrink-0 w-full max-w-[322px] snap-center">
                 <ReportSummaryCard
-                  variant={variant}
-                  previewCenter={previewCenter}
+                  variant={i === 1 ? "bright" : i === 2 ? "fast" : "balanced"}
+                  previewCenter={{ lat: previewPath[0].lat, lng: previewPath[0].lng }}
                   previewPath={previewPath}
                   onDetail={() => handleOpenDetail(path, i)}
-                  onClose={() => {}}
                 />
               </div>
             );
@@ -247,24 +155,29 @@ export default function ReportScreen() {
         </div>
       </div>
 
-      {/* 상세 리포트 패널 */}
+      {/* 상세 패널 */}
       {isDetailOpen && (
         <div
           className="absolute inset-0 z-30 flex items-center justify-center bg-black/20"
-          onClick={handleCloseDetail}
+          onClick={() => setIsDetailOpen(false)}
         >
-          <div
-            className="w-full px-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-[356px] h-[72vh] rounded-[20px] overflow-hidden -translate-y-6">
-              <div className="h-full overflow-y-auto no-scrollbar">
+              <div className="h-full overflow-y-auto no-scrollbar relative">
+
                 <ReportDetailPanel
                   report={reportData}
-                  loading={isReportLoading}
+                  loading={false}       
                   error={reportError}
-                  onGuideClick={handleGuideClick}
+                  onGuideClick={() => navigate("/route")}
                 />
+
+                {/* 로딩 중일 때만 위에 반투명 + 블러 오버레이 + 스피너 */}
+                {isReportLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                    <Loading size={56} thickness={8} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
