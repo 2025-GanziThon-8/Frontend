@@ -4,26 +4,67 @@ import { loadKakao } from "../lib/loadKakao";
 import InputRoute from "../component/InputRoute";
 import { useRouteStore } from "../store/useRouteStore";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function HomeScreen() {
   const navigate = useNavigate();
 
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
 
-  const { start, end, viaList, addVia } = useRouteStore(); // zustand 상태 관리
+  const { start, end, viaList, addVia, setPaths, setSelectedPath } =
+    useRouteStore();
 
   const handleClickStart = () => navigate("/search?type=from");
   const handleClickEnd = () => navigate("/search?type=to");
   const handleClickVia = (idx) => navigate(`/search?type=via&index=${idx}`);
 
-  const goRoute = () => {
+  const goRoute = async () => {
     if (!start || !end) {
       alert("출발지와 도착지를 먼저 입력해주세요.");
       return;
     }
-    navigate("/report");
+
+    const payload = {
+      start_lat: start.lat,
+      start_lng: start.lng,
+      end_lat: end.lat,
+      end_lng: end.lng,
+      waypoint_lat: viaList[0]?.lat ?? null,
+      waypoint_lng: viaList[0]?.lng ?? null,
+      start_name: start.name,
+      end_name: end.name,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/analysis/paths`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data?.message || "경로 조회 실패");
+        return;
+      }
+
+      setPaths(data.paths);
+
+      const recommended =
+        data.paths.find((p) => p.is_recommended) ?? data.paths[0];
+
+      setSelectedPath(recommended);
+
+      // ReportScreen으로 이동
+      navigate("/report");
+    } catch (error) {
+      alert("네트워크 오류가 발생했습니다.");
+    }
   };
 
+  // 카카오 지도 초기화
   useEffect(() => {
     let ro;
 
